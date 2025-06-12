@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Galeri seni</string>
+    <string name="profile">Profile</string>
+    <string name="error">Gagal memuat data.. Koneksi error.</string>
+    <string name="try_again">Coba lagi</string>
+    <string name="gambar">Gambar %1$s</string>
+    <string name="tutup">Tutup</string>
+    <string name="logout">Logout</string>
 </resources>

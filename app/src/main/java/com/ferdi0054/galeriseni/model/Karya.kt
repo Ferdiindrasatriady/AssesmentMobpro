@@ -5,5 +5,6 @@ data class Karya(
     val judul: String,
     val gambar: String,
     val deskripsi: String,
-    val editabke: Boolean
+    val editabke: Boolean,
+    val url:String
 )
