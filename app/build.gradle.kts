@@ -55,6 +55,11 @@ dependencies {
     implementation(libs.converter.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.androidx.datasore.preferences)
+    implementation(libs.androidx.image.cropper)
 
 
     testImplementation(libs.junit)
