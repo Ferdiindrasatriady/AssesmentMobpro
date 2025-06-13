@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ferdi0054.galeriseni.model.Karya
 import com.ferdi0054.galeriseni.network.ApiStatus
+import com.ferdi0054.galeriseni.network.IMAGE_APIKEY
 import com.ferdi0054.galeriseni.network.KaryaApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 
-class MainViewModel: ViewModel() {
+class MainViewModel : ViewModel() {
     var data = mutableStateOf(emptyList<Karya>())
         private set
     var status = MutableStateFlow(ApiStatus.LOADING)
@@ -24,11 +25,11 @@ class MainViewModel: ViewModel() {
     var errorMessage = mutableStateOf<String?>(null)
         private set
 
-    fun retrieveData() {
+    fun retrieveData(userId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             status.value = ApiStatus.LOADING
             try {
-                data.value = KaryaApi.service.getKarya()
+                data.value = KaryaApi.service.getKarya(userId)
                 Log.d("KARYA_LIST", "Jumlah karya: ${data.value.size}")
                 Log.d("KARYA_LIST", "Judul pertama: ${data.value.firstOrNull()?.judul}")
 
@@ -39,25 +40,52 @@ class MainViewModel: ViewModel() {
             }
         }
     }
-    fun saveData(userId: String, judul: String, deskripsi: String, bitmap: Bitmap) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = KaryaApi.service.postKarya(
-                    userId,
-                    judul.toRequestBody("text/plain".toMediaTypeOrNull()),
-                    deskripsi.toRequestBody("text/plain".toMediaTypeOrNull()),
 
-                    bitmap.toMultipartBody()
-                )
-                if (result.status == "success")
-                    retrieveData()
-                else
-                    throw Exception(result.message)
+    fun deleteImage(id: String, userId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            status.value = ApiStatus.LOADING
+            try {
+                KaryaApi.service.deleteKarya(id)
+                retrieveData(userId)
+                status.value = ApiStatus.SUCCESS
             } catch (e: Exception) {
+                status.value = ApiStatus.FAILED
+                e.printStackTrace()
                 Log.d("MainViewModel", "Failure: ${e.message}")
             }
         }
     }
+
+    fun saveData(
+        userId: String,
+        judul: String,
+        deskripsi: String,
+        bitmap: Bitmap,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            status.value = ApiStatus.LOADING
+            try {
+                val imageResponse = KaryaApi.imageService.postImage(
+                    key = IMAGE_APIKEY,
+                    action = "upload",
+                    image = bitmap.toMultipartBody()
+                )
+                KaryaApi.service.postKarya(
+                    judul = judul,
+                    deskripsi = deskripsi,
+                    imageUrl = imageResponse.image.thumb.url,
+                    mine = userId
+                )
+                retrieveData(userId)
+                status.value = ApiStatus.SUCCESS
+            } catch (e: Exception) {
+                status.value = ApiStatus.FAILED
+                e.printStackTrace()
+                Log.d("MainViewModel", "Failure: ${e.message}")
+            }
+        }
+    }
+
     private fun Bitmap.toMultipartBody(): MultipartBody.Part {
         val stream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, 80, stream)
@@ -66,9 +94,10 @@ class MainViewModel: ViewModel() {
             "image/jpg".toMediaTypeOrNull(), 0, byteArray.size
         )
         return MultipartBody.Part.createFormData(
-            "image", "image.jpg", requestBody
+            "source", "image.jpg", requestBody
         )
     }
+
     fun clearMessage() {
         errorMessage.value = null
     }

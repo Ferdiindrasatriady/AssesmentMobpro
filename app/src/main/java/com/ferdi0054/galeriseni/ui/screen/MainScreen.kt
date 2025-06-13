@@ -1,7 +1,5 @@
 package com.ferdi0054.galeriseni.ui.screen
 
-import com.ferdi0054.galeriseni.BuildConfig
-
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
@@ -13,7 +11,9 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,11 +70,11 @@ import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
+import com.ferdi0054.galeriseni.BuildConfig
 import com.ferdi0054.galeriseni.R
 import com.ferdi0054.galeriseni.model.Karya
 import com.ferdi0054.galeriseni.model.User
 import com.ferdi0054.galeriseni.network.ApiStatus
-import com.ferdi0054.galeriseni.network.KaryaApi
 import com.ferdi0054.galeriseni.network.UserDataStore
 import com.ferdi0054.galeriseni.ui.theme.GaleriSeniTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -82,10 +82,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-
-
 
 
 @SuppressLint("UnrememberedMutableState")
@@ -98,7 +95,6 @@ fun MainScreen() {
 
     val viewModel: MainViewModel = viewModel()
     val errorMessage by viewModel.errorMessage
-
 
 
     var showDialog by remember { mutableStateOf(false) }
@@ -163,7 +159,7 @@ fun MainScreen() {
     ) { innerPadding ->
         ScrenContent(viewModel, user.email, Modifier.padding(innerPadding))
         if (showDialog) {
-            ProfilDialog (
+            ProfilDialog(
                 user = user,
                 onDismisRequest = { showDialog = false }) {
                 CoroutineScope(Dispatchers.IO).launch { signOut(context, dataStore) }
@@ -173,7 +169,7 @@ fun MainScreen() {
         if (showKaryaDialog) {
             KaryaDialog(
                 bitmap = bitmap,
-                onDismissRequest = {showKaryaDialog = false}) {judul, deskripsi ->
+                onDismissRequest = { showKaryaDialog = false }) { judul, deskripsi ->
                 Log.d("TAMBAH", "$judul $deskripsi ditambahkan.")
                 showKaryaDialog = false
                 viewModel.saveData(user.email, judul, deskripsi, bitmap!!)
@@ -185,8 +181,9 @@ fun MainScreen() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ScrenContent(viewModel: MainViewModel,userId: String, modifier: Modifier = Modifier) {
+fun ScrenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = Modifier) {
 
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
@@ -214,7 +211,16 @@ fun ScrenContent(viewModel: MainViewModel,userId: String, modifier: Modifier = M
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
-                items(data) { ListItem(karya = it) }
+                items(data) {
+                    ListItem(
+                        karya = it, modifier = Modifier.combinedClickable(
+                            onClick = { },
+                            onLongClick = {
+                                if (it.mine == "1") viewModel.deleteImage(it.id, userId)
+                            },
+                        )
+                    )
+                }
             }
         }
 
@@ -238,18 +244,15 @@ fun ScrenContent(viewModel: MainViewModel,userId: String, modifier: Modifier = M
 }
 
 @Composable
-fun ListItem(karya: Karya) {
+fun ListItem(karya: Karya, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(8.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surface)
             .shadow(2.dp)
     ) {
-        // Gambar dengan ukuran tetap
-        Log.d("IMAGE_URL", "URL: ${KaryaApi.getKaryaUrl(karya.gambar)}")
-
         AsyncImage(
             model = karya.gambar,
             contentDescription = karya.judul,
