@@ -1,4 +1,4 @@
-package com.ferdi0054.galeriseni.ui.Screen
+package com.ferdi0054.galeriseni.ui.screen
 
 import android.content.ContentResolver
 import android.content.Context
@@ -88,9 +88,11 @@ fun MainScreen(){
     val user by dataStore.userFlow.collectAsState(User())
 
     var showDialog by remember { mutableStateOf(false) }
+    var showKaryaDialog by remember { mutableStateOf(false) }
     var bitmap: Bitmap? by remember { mutableStateOf(null) }
     val launcher = rememberLauncherForActivityResult(CropImageContract()) {
         bitmap = getCropperImage(context.contentResolver, it)
+        if (bitmap !=null) showKaryaDialog =true
     }
     Scaffold(
         topBar = {
@@ -144,6 +146,14 @@ fun MainScreen(){
                 onDismisRequest = { showDialog = false }) {
                 CoroutineScope(Dispatchers.IO).launch { signOut(context, dataStore) }
                 showDialog = false
+            }
+        }
+        if (showKaryaDialog) {
+            KaryaDialog (
+                bitmap = bitmap,
+                onDismissRequest = { showKaryaDialog = false }) { nama, namaLatin ->
+                Log.d("TAMBAH", "$nama $namaLatin ditambahkan.")
+                showKaryaDialog = false
             }
         }
     }
@@ -282,7 +292,7 @@ private suspend fun handleSignIn(
 
 private suspend fun signOut(context: Context, dataStore: UserDataStore) {
     try {
-        val credentialManager = androidx.credentials.CredentialManager.create(context)
+        val credentialManager = CredentialManager.create(context)
         credentialManager.clearCredentialState(
             ClearCredentialStateRequest()
         )

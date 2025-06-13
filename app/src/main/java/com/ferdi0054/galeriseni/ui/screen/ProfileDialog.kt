@@ -1,4 +1,4 @@
-package com.ferdi0054.galeriseni.ui.Screen
+package com.ferdi0054.galeriseni.ui.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
