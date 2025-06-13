@@ -97,6 +97,13 @@ fun MainScreen() {
     val errorMessage by viewModel.errorMessage
 
 
+
+
+
+
+
+
+
     var showDialog by remember { mutableStateOf(false) }
     var showKaryaDialog by remember { mutableStateOf(false) }
     var bitmap: Bitmap? by remember { mutableStateOf(null) }

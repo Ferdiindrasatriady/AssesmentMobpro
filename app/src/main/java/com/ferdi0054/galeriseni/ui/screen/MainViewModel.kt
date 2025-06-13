@@ -74,7 +74,7 @@ class MainViewModel : ViewModel() {
                     judul = judul,
                     deskripsi = deskripsi,
                     imageUrl = imageResponse.image.thumb.url,
-                    mine = userId
+                    mine = "1"
                 )
                 retrieveData(userId)
                 status.value = ApiStatus.SUCCESS
