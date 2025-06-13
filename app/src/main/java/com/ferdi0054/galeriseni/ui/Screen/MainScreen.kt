@@ -51,7 +51,7 @@ import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.viewbinding.BuildConfig
+import com.ferdi0054.galeriseni.BuildConfig
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ferdi0054.galeriseni.R
@@ -209,7 +209,7 @@ fun ListItem(karya: Karya) {
 private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     val googleOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)
-        .setServerClientId(BuildConfig.)
+        .setServerClientId(BuildConfig.API_KEY)
         .build()
 
     val request: GetCredentialRequest = GetCredentialRequest.Builder()
