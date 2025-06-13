@@ -74,6 +74,7 @@ import com.ferdi0054.galeriseni.R
 import com.ferdi0054.galeriseni.model.Karya
 import com.ferdi0054.galeriseni.model.User
 import com.ferdi0054.galeriseni.network.ApiStatus
+import com.ferdi0054.galeriseni.network.KaryaApi
 import com.ferdi0054.galeriseni.network.UserDataStore
 import com.ferdi0054.galeriseni.ui.theme.GaleriSeniTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -97,8 +98,6 @@ fun MainScreen() {
 
     val viewModel: MainViewModel = viewModel()
     val errorMessage by viewModel.errorMessage
-    var data = mutableStateOf(emptyList<Karya>())
-    var status = MutableStateFlow(ApiStatus.LOADING)
 
 
 
@@ -138,14 +137,22 @@ fun MainScreen() {
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
-                val options = CropImageContractOptions(
-                    null, CropImageOptions(
-                        imageSourceIncludeGallery = false,
-                        imageSourceIncludeCamera = true,
-                        fixAspectRatio = true
+                if (user.email.isEmpty()) {
+                    Toast.makeText(
+                        context,
+                        "Anda harus login terlebih dahulu",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    val options = CropImageContractOptions(
+                        null, CropImageOptions(
+                            imageSourceIncludeGallery = false,
+                            imageSourceIncludeCamera = true,
+                            fixAspectRatio = true
+                        )
                     )
-                )
-                launcher.launch(options)
+                    launcher.launch(options)
+                }
             }) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -154,7 +161,7 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        ScrenContent(viewModel, Modifier.padding(innerPadding))
+        ScrenContent(viewModel, user.email, Modifier.padding(innerPadding))
         if (showDialog) {
             ProfilDialog (
                 user = user,
@@ -169,6 +176,7 @@ fun MainScreen() {
                 onDismissRequest = {showKaryaDialog = false}) {judul, deskripsi ->
                 Log.d("TAMBAH", "$judul $deskripsi ditambahkan.")
                 showKaryaDialog = false
+                viewModel.saveData(user.email, judul, deskripsi, bitmap!!)
             }
         }
         if (errorMessage != null)
@@ -178,13 +186,13 @@ fun MainScreen() {
 }
 
 @Composable
-fun ScrenContent(viewModel: MainViewModel, modifier: Modifier = Modifier) {
+fun ScrenContent(viewModel: MainViewModel,userId: String, modifier: Modifier = Modifier) {
 
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.retrieveData()
+        viewModel.retrieveData(userId)
     }
 
 
@@ -218,7 +226,7 @@ fun ScrenContent(viewModel: MainViewModel, modifier: Modifier = Modifier) {
             ) {
                 Text(text = stringResource(id = R.string.error))
                 Button(
-                    onClick = { viewModel.retrieveData() },
+                    onClick = { viewModel.retrieveData(userId) },
                     modifier = Modifier.padding(top = 16.dp),
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 16.dp)
                 ) {
@@ -240,6 +248,8 @@ fun ListItem(karya: Karya) {
             .shadow(2.dp)
     ) {
         // Gambar dengan ukuran tetap
+        Log.d("IMAGE_URL", "URL: ${KaryaApi.getKaryaUrl(karya.gambar)}")
+
         AsyncImage(
             model = karya.gambar,
             contentDescription = karya.judul,
