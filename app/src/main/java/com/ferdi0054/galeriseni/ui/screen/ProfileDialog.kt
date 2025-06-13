@@ -1,5 +1,6 @@
 package com.ferdi0054.galeriseni.ui.screen
 
+
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement

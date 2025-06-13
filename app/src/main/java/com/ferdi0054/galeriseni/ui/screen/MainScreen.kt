@@ -1,5 +1,8 @@
 package com.ferdi0054.galeriseni.ui.screen
 
+import com.ferdi0054.galeriseni.BuildConfig
+
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.res.Configuration
@@ -8,6 +11,7 @@ import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +70,6 @@ import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
-import com.ferdi0054.galeriseni.BuildConfig
 import com.ferdi0054.galeriseni.R
 import com.ferdi0054.galeriseni.model.Karya
 import com.ferdi0054.galeriseni.model.User
@@ -78,21 +81,33 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
+
+
+
+@SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(){
+fun MainScreen() {
     val context = LocalContext.current
     val dataStore = UserDataStore(context)
     val user by dataStore.userFlow.collectAsState(User())
+
+    val viewModel: MainViewModel = viewModel()
+    val errorMessage by viewModel.errorMessage
+    var data = mutableStateOf(emptyList<Karya>())
+    var status = MutableStateFlow(ApiStatus.LOADING)
+
+
 
     var showDialog by remember { mutableStateOf(false) }
     var showKaryaDialog by remember { mutableStateOf(false) }
     var bitmap: Bitmap? by remember { mutableStateOf(null) }
     val launcher = rememberLauncherForActivityResult(CropImageContract()) {
         bitmap = getCropperImage(context.contentResolver, it)
-        if (bitmap !=null) showKaryaDialog =true
+        if (bitmap != null) showKaryaDialog = true
     }
     Scaffold(
         topBar = {
@@ -139,9 +154,9 @@ fun MainScreen(){
             }
         }
     ) { innerPadding ->
-        ScrenContent(Modifier.padding(innerPadding))
+        ScrenContent(viewModel, Modifier.padding(innerPadding))
         if (showDialog) {
-            ProfilDialog(
+            ProfilDialog (
                 user = user,
                 onDismisRequest = { showDialog = false }) {
                 CoroutineScope(Dispatchers.IO).launch { signOut(context, dataStore) }
@@ -149,19 +164,22 @@ fun MainScreen(){
             }
         }
         if (showKaryaDialog) {
-            KaryaDialog (
+            KaryaDialog(
                 bitmap = bitmap,
-                onDismissRequest = { showKaryaDialog = false }) { nama, namaLatin ->
-                Log.d("TAMBAH", "$nama $namaLatin ditambahkan.")
+                onDismissRequest = {showKaryaDialog = false}) {judul, deskripsi ->
+                Log.d("TAMBAH", "$judul $deskripsi ditambahkan.")
                 showKaryaDialog = false
             }
         }
+        if (errorMessage != null)
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+        viewModel.clearMessage()
     }
 }
 
 @Composable
-fun ScrenContent(modifier: Modifier = Modifier) {
-    val viewModel: MainViewModel = viewModel()
+fun ScrenContent(viewModel: MainViewModel, modifier: Modifier = Modifier) {
+
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
 
@@ -248,7 +266,6 @@ fun ListItem(karya: Karya) {
 }
 
 
-
 private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     val googleOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)
@@ -301,6 +318,7 @@ private suspend fun signOut(context: Context, dataStore: UserDataStore) {
         Log.e("SIGN-IN", "Error: ${e.errorMessage}")
     }
 }
+
 private fun getCropperImage(
     resolver: ContentResolver,
     result: CropImageView.CropResult

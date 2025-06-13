@@ -110,9 +110,9 @@ fun KaryaDialog(
 fun AddDialogPreview() {
     GaleriSeniTheme  {
         KaryaDialog(
-            bitmap = null,
-            onDismissRequest = {},
-            onConfirmation = { _, _ -> }
-        )
+                bitmap = null,
+                onDismissRequest = {},
+                onConfirmation = { _, _ -> }
+            )
     }
 }

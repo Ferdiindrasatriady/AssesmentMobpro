@@ -9,7 +9,6 @@ import okhttp3.RequestBody
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -32,9 +31,10 @@ interface KaryaApiService {
     @Multipart
     @POST("karya")
     suspend fun postKarya(
-        @Part("judul") judul: RequestBody,
+        @Part("judul") judul: String,
         @Part("deskripsi") deskripsi: RequestBody,
-        @Part image: MultipartBody.Part
+        @Part image: RequestBody,
+        toMultipartBody: MultipartBody.Part
     ): opStatus
 }
 
