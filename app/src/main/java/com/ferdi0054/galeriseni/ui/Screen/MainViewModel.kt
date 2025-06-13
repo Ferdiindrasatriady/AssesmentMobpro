@@ -21,7 +21,10 @@ class MainViewModel: ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             status.value = ApiStatus.LOADING
             try {
-                data.value = KaryaApi.service.getKarya("")
+                data.value = KaryaApi.service.getKarya()
+                Log.d("KARYA_LIST", "Jumlah karya: ${data.value.size}")
+                Log.d("KARYA_LIST", "Judul pertama: ${data.value.firstOrNull()?.judul}")
+
                 status.value = ApiStatus.SUCCESS
             } catch (e: Exception) {
                 Log.d("MainViewModel", "FailureL ${e.message}")

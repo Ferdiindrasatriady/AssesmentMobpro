@@ -14,7 +14,8 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 
-private  const val BASE_URL = "http://10.0.2.2:3000/"
+private const val BASE_URL = "http://192.168.0.100:3000/"
+
 
 private val  moshi = Moshi.Builder()
     .add(KotlinJsonAdapterFactory())
@@ -24,28 +25,27 @@ private  val retrofit = Retrofit.Builder()
     .baseUrl(BASE_URL)
     .build()
 
-interface KaryaApiService{
-    @GET("karya.php")
-    suspend fun getKarya(
-        @Header("Authorization") userId: String
-    ): List<Karya>
+interface KaryaApiService {
+    @GET("karya")
+    suspend fun getKarya(): List<Karya>
 
     @Multipart
-    @POST("karya.php")
+    @POST("karya")
     suspend fun postKarya(
-        @Header("Authorization") userId: String,
         @Part("judul") judul: RequestBody,
         @Part("deskripsi") deskripsi: RequestBody,
         @Part image: MultipartBody.Part
-    ):opStatus
+    ): opStatus
 }
+
 
 object KaryaApi{
     val service: KaryaApiService by lazy {
         retrofit.create(KaryaApiService::class.java)
     }
-    fun getKaryaUrl (imageId : String): String{
-        return "${BASE_URL}karya.php?id=$imageId"
+    fun getKaryaUrl(imageId: String): String {
+        return "${BASE_URL}images/$imageId.jpg"
     }
+
 }
 enum class ApiStatus {LOADING, SUCCESS, FAILED}

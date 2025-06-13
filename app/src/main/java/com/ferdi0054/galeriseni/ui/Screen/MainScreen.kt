@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -70,7 +75,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    viewModel: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+    LaunchedEffect(Unit) {
+        viewModel.retrieveData()
+    }
     val context = LocalContext.current
     val dataStore = UserDataStore(context)
     val user by dataStore.userFlow.collectAsState(User())
@@ -122,6 +132,11 @@ fun ScrenContent(modifier: Modifier = Modifier) {
     val data by viewModel.data
     val status by viewModel.status.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.retrieveData()
+    }
+
+
     when (status) {
         ApiStatus.LOADING -> {
             Box(
@@ -164,47 +179,41 @@ fun ScrenContent(modifier: Modifier = Modifier) {
 
 @Composable
 fun ListItem(karya: Karya) {
-    Box(
+    Column(
         modifier = Modifier
-            .padding(4.dp)
-            .border(1.dp, Color.Gray),
-        contentAlignment = Alignment.BottomCenter
+            .padding(8.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .shadow(2.dp)
     ) {
+        // Gambar dengan ukuran tetap
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(KaryaApi.getKaryaUrl(karya.url))
-                .crossfade(true)
-                .build(),
-            contentDescription = stringResource(R.string.gambar),
-            contentScale = ContentScale.Crop,
+            model = karya.gambar,
+            contentDescription = karya.judul,
             placeholder = painterResource(id = R.drawable.loading_img),
             error = painterResource(id = R.drawable.baseline_broken_image_24),
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(4.dp)
+                .aspectRatio(4f / 3f) // biar semua gambar proporsional
         )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-                .background(Color(red = 0f, green = 0f, blue = 0f, alpha = 0.5f))
-                .padding(4.dp)
-        ) {
-            Text(
-                text = karya.id,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
 
+        // Teks di bawah gambar
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(
+                text = karya.judul,
+                fontWeight = FontWeight.Bold
             )
             Text(
-                text = karya.url,
-                fontStyle = FontStyle.Italic,
-                fontSize = 14.sp,
-                color = Color.White
+                text = karya.deskripsi,
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
 }
+
+
 
 private suspend fun signIn(context: Context, dataStore: UserDataStore) {
     val googleOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
