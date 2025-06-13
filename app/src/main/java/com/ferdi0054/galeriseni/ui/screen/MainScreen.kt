@@ -11,6 +11,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -30,6 +32,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -50,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -96,14 +102,6 @@ fun MainScreen() {
     val viewModel: MainViewModel = viewModel()
     val errorMessage by viewModel.errorMessage
 
-
-
-
-
-
-
-
-
     var showDialog by remember { mutableStateOf(false) }
     var showKaryaDialog by remember { mutableStateOf(false) }
     var bitmap: Bitmap? by remember { mutableStateOf(null) }
@@ -113,13 +111,18 @@ fun MainScreen() {
     }
     Scaffold(
         topBar = {
+            val galaxyBrush = Brush.horizontalGradient(
+                colors = listOf(Color.Black, Color(0xFFB71C1C)) // Galaxy-style gradient
+            )
+
             TopAppBar(
                 title = {
                     Text(text = stringResource(id = R.string.app_name))
                 },
+                modifier = Modifier.background(galaxyBrush),
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    containerColor = Color.Transparent,
+                    titleContentColor = Color.White,
                 ),
                 actions = {
                     IconButton(onClick = {
@@ -132,11 +135,12 @@ fun MainScreen() {
                         Icon(
                             painter = painterResource(R.drawable.baseline_account_circle_24),
                             contentDescription = stringResource(id = R.string.profile),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color.White
                         )
                     }
                 }
             )
+
         },
         floatingActionButton = {
             FloatingActionButton(onClick = {
@@ -164,7 +168,9 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        ScrenContent(viewModel, user.email, Modifier.padding(innerPadding))
+        AnimatedBackgroundBox {
+            ScrenContent(viewModel, user.email, Modifier.padding(innerPadding))
+        }
         if (showDialog) {
             ProfilDialog(
                 user = user,
@@ -220,14 +226,15 @@ fun ScrenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = 
             ) {
                 items(data) {
                     ListItem(
-                        karya = it, modifier = Modifier.combinedClickable(
-                            onClick = { },
-                            onLongClick = {
-                                if (it.mine == "1") viewModel.deleteImage(it.id, userId)
-                            },
-                        )
+                        karya = it,
+                        onDeleteClick = {
+                            if (it.mine == "1") {
+                                viewModel.deleteImage(it.id, userId)
+                            }
+                        }
                     )
                 }
+
             }
         }
 
@@ -251,7 +258,13 @@ fun ScrenContent(viewModel: MainViewModel, userId: String, modifier: Modifier = 
 }
 
 @Composable
-fun ListItem(karya: Karya, modifier: Modifier = Modifier) {
+fun ListItem(
+    karya: Karya,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .padding(8.dp)
@@ -260,18 +273,46 @@ fun ListItem(karya: Karya, modifier: Modifier = Modifier) {
             .background(MaterialTheme.colorScheme.surface)
             .shadow(2.dp)
     ) {
-        AsyncImage(
-            model = karya.gambar,
-            contentDescription = karya.judul,
-            placeholder = painterResource(id = R.drawable.loading_img),
-            error = painterResource(id = R.drawable.baseline_broken_image_24),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(4f / 3f) // biar semua gambar proporsional
-        )
+        Box {
+            AsyncImage(
+                model = karya.gambar,
+                contentDescription = karya.judul,
+                placeholder = painterResource(id = R.drawable.loading_img),
+                error = painterResource(id = R.drawable.baseline_broken_image_24),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(4f / 3f)
+            )
 
-        // Teks di bawah gambar
+            // Tampilkan titik tiga hanya jika karya punya mine == "1"
+            if (karya.mine == "1") {
+                IconButton(
+                    onClick = { expanded = true },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_more_vert_24),
+                        contentDescription = "Menu",
+                        tint = Color.White
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Hapus") },
+                        onClick = {
+                            expanded = false
+                            onDeleteClick()
+                        }
+                    )
+                }
+            }
+        }
+
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = karya.judul,
@@ -356,6 +397,41 @@ private fun getCropperImage(
         ImageDecoder.decodeBitmap(source)
     }
 }
+
+@SuppressLint("RememberReturnType")
+@Composable
+fun AnimatedBackgroundBox(content: @Composable () -> Unit) {
+    val colors = listOf(
+        Color(0xFF0D0D0D), // hitam pekat
+        Color(0xFF2C003E), // ungu galaxy
+        Color(0xFF3B0A20), // merah darah gelap
+        Color(0xFF1B1B2F), // biru gelap
+        Color(0xFF4E0310), // merah kecoklatan
+    )
+
+    var currentIndex by remember { mutableStateOf(0) }
+    val transitionColor = remember { Animatable(colors[0]) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val nextIndex = (currentIndex + 1) % colors.size
+            transitionColor.animateTo(
+                targetValue = colors[nextIndex],
+                animationSpec = tween(durationMillis = 2000) // 2 detik transisi
+            )
+            currentIndex = nextIndex
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(transitionColor.value)
+    ) {
+        content()
+    }
+}
+
 
 @Preview(showBackground = true)
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)

@@ -108,11 +108,11 @@ fun KaryaDialog(
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 fun AddDialogPreview() {
-    GaleriSeniTheme  {
+    GaleriSeniTheme {
         KaryaDialog(
-                bitmap = null,
-                onDismissRequest = {},
-                onConfirmation = { _, _ -> }
-            )
+            bitmap = null,
+            onDismissRequest = {},
+            onConfirmation = { _, _ -> }
+        )
     }
 }

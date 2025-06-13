@@ -52,9 +52,8 @@ interface KaryaApiService {
         @Field("judul") judul: String,
         @Field("deskripsi") deskripsi: String,
         @Field("gambar") imageUrl: String,
-        @Field("mine") mine:String
+        @Field("mine") mine: String
     )
-
 
     @DELETE("art/{id}")
     suspend fun deleteKarya(
@@ -71,7 +70,6 @@ interface ImageService {
         @Part image: MultipartBody.Part
     ): ImageResponse
 }
-
 
 object KaryaApi {
     val service: KaryaApiService by lazy {
